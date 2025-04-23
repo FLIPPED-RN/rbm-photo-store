@@ -5,6 +5,7 @@ import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
 import { Photo } from './entities/photo.entity';
 import { CategoriesService } from 'src/categories/categories.service';
+import { FilesService } from 'src/files/files.service';
 
 
 @Injectable()
@@ -13,6 +14,7 @@ export class PhotosService {
     @InjectRepository(Photo)
     private photoRepository: Repository<Photo>,
     private categoriesService: CategoriesService,
+    private filesService: FilesService,
   ) {}
 
   async create(createPhotoDto: CreatePhotoDto): Promise<Photo> {
@@ -24,6 +26,27 @@ export class PhotosService {
     if (createPhotoDto.categoryIds && createPhotoDto.categoryIds.length > 0) {
       photo.categories = await this.categoriesService.findByIds(createPhotoDto.categoryIds);
     }
+
+    return this.photoRepository.save(photo);
+  }
+
+  async uploadPhoto(title: string, file: any, categoryId: number): Promise<Photo> {
+    // Проверяем, существует ли категория
+    const categories = await this.categoriesService.findByIds([categoryId]);
+    
+    if (!categories || categories.length === 0) {
+      throw new NotFoundException(`Категория с ID ${categoryId} не найдена`);
+    }
+
+    // Создаем URL для доступа к файлу
+    const fileUrl = this.filesService.getFileUrl(file.filename, categoryId);
+
+    // Создаем новую запись в базе данных
+    const photo = this.photoRepository.create({
+      title,
+      url: fileUrl,
+      categories,
+    });
 
     return this.photoRepository.save(photo);
   }
@@ -76,6 +99,18 @@ export class PhotosService {
 
   async remove(id: number): Promise<void> {
     const photo = await this.findOne(id);
+    
+    // Если URL фото содержит /uploads/, то это локальный файл и его нужно удалить
+    if (photo.url && photo.url.includes('/uploads/')) {
+      // Извлекаем имя файла из URL
+      const urlParts = photo.url.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      const categoryId = urlParts[urlParts.length - 2];
+      
+      // Удаляем файл
+      this.filesService.deleteFile(filename, categoryId);
+    }
+    
     await this.photoRepository.remove(photo);
   }
 }

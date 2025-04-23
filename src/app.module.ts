@@ -6,6 +6,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Photo } from './photos/entities/photo.entity';
 import { Category } from './categories/entities/categories.entity';
+import { FilesModule } from './files/files.module';
 
 
 @Module({
@@ -18,6 +19,7 @@ import { Category } from './categories/entities/categories.entity';
     }),
     PhotosModule,
     CategoriesModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

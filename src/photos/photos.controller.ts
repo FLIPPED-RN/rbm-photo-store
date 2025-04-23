@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 
 @Controller('photos')
 export class PhotosController {
@@ -11,6 +13,20 @@ export class PhotosController {
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createPhotoDto: CreatePhotoDto) {
     return this.photosService.create(createPhotoDto);
+  }
+
+  @Post('upload/:categoryId')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('categoryId') categoryId: string,
+    @Body('title') title: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Файл не найден');
+    }
+
+    return this.photosService.uploadPhoto(title, file, +categoryId);
   }
 
   @Get()

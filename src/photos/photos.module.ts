@@ -4,11 +4,13 @@ import { PhotosService } from './photos.service';
 import { PhotosController } from './photos.controller';
 import { Photo } from './entities/photo.entity';
 import { CategoriesModule } from '../categories/categories.module';
+import { FilesModule } from '../files/files.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Photo]),
-    CategoriesModule
+    CategoriesModule,
+    FilesModule
   ],
   controllers: [PhotosController],
   providers: [PhotosService],
